@@ -1,25 +1,58 @@
 #!python3
 
 import sys
+import os
 import requests
+
+def print_help():
+    message = """
+    RuneScore fetches a RuneScape player's stats from Jagex' servers,
+    and then creates a formatted HTML table out of the data.
+
+    Command-line arguments:
+      --player-name [PLAYER NAME]
+        * When used, the script will use the included name.
+        * Example: $ src/main.py --player-name "Diapolo 10"
+
+      --osrs
+        * Use Old School RuneScape hiscores instead of RS3 ones
+        * Alternative flag: --oldschool
+        * Example: $ src/main.py --osrs --player-name Ironman-Dia
+
+      --help
+        * Display this tooltip and close the program
+        * Alternative flag: -h
+        * Example: $ src/main.py --help
+
+    @2017 copyright Lari Liuhamo
+    """
+    print(message)
 
 def argparse(args):
     player_name = None
     use_osrs_hiscores = False
 
+    # Let's store whether the last flag required a value
+    value = False
+
     try:
         for index, arg in enumerate(args):
+
             if arg == "--player-name":
                 player_name = args[index + 1]
+                value = True
 
             elif arg in ("--osrs", "--oldschool"):
                 use_osrs_hiscores = True
 
             elif arg in ("-h", "--help"): #TODO: Implement help function
-                pass
+                print_help()
+                sys.exit()
 
             else:
-                raise TypeError
+                if not value:
+                    raise TypeError
+                value = False
 
     except IndexError:
         sys.exit(f"Error: '{arg}' requires a value, which was not provided")
@@ -32,7 +65,9 @@ def argparse(args):
 
 def get_stats(player_name, osrs=False):
 
-    page = requests.get(f'http://services.runescape.com/m=hiscore{"_oldschool" if osrs else ""}/index_lite.ws?player={player_name}')
+    page = requests.get(
+        f'http://services.runescape.com/m=hiscore{"_oldschool" if osrs else ""}/index_lite.ws?player={player_name}'
+    )
 
     return [
         stat for stat in [
@@ -96,7 +131,8 @@ def main():
 
     stats = get_stats(player_name, osrs)
     html = format_html(stats, osrs)
-    with open(f"{player_name}.html", "w") as f:
+    print(os.path.join(os.getcwd(), "hiscores", f"{player_name}.html"))
+    with open(os.path.join(os.getcwd(), "hiscores", f"{player_name}.html"), "w") as f:
         f.write(html)
     sys.exit()
 
