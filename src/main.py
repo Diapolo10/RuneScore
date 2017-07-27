@@ -30,7 +30,15 @@ def print_help():
 
 def argparse(args):
     player_name = None
-    use_osrs_hiscores = False
+
+    hiscores = ""
+    # Values: "" for RS3, "_oldschool" for OSRS
+
+    gamemode = ""
+    # Values: "" for normal player,
+    #         "_ironman" for ironman,
+    #         "_ultimate" for UIM,
+    #         "_hardcore" for HCIM
 
     # Let's store whether the last flag required a value
     value = False
@@ -43,7 +51,16 @@ def argparse(args):
                 value = True
 
             elif arg in ("--osrs", "--oldschool"):
-                use_osrs_hiscores = True
+                hiscores = "_oldschool"
+
+            elif arg == "--ironman":
+                gamemode = "_ironman"
+
+            elif arg in ["--uim", "--ultimate", "--ultimate-ironman"]:
+                gamemode = "_ultimate"
+
+            elif arg in ["--hcim", "--hardcore", "--hardcore-ironman"]:
+                gamemode = "_hardcore"
 
             elif arg in ("-h", "--help"): #TODO: Implement help function
                 print_help()
@@ -60,13 +77,17 @@ def argparse(args):
     except TypeError:
         sys.exit(f"Error: '{arg}' is not a valid argument or flag")
 
-    return (player_name, use_osrs_hiscores)
+    # Because RS3 doesn't have UIM mode:
+    if hiscores != "_oldschool" and gamemode == "_ultimate":
+        sys.exit("Error: RS3 does not have Ultimate Ironman mode")
+
+    return (player_name, hiscores, gamemode)
 
 
-def get_stats(player_name, osrs=False):
+def get_stats(player_name, hiscores="", gamemode=""):
 
     page = requests.get(
-        f'http://services.runescape.com/m=hiscore{"_oldschool" if osrs else ""}/index_lite.ws?player={player_name}'
+        f'http://services.runescape.com/m=hiscore{hiscores}{gamemode}/index_lite.ws?player={player_name}'
     )
 
     return [
@@ -80,7 +101,7 @@ def get_stats(player_name, osrs=False):
         if len(stat)==3
         ]
 
-def format_html(player_stats, osrs=False):
+def format_html(player_stats, hiscores="", gamemode=""):
 
     # Since we cannot get skill names from Jagex' servers, we have to provide the data ourselves.
     SKILL_NAMES = ("Total", "Attack", "Defence",
@@ -96,11 +117,17 @@ def format_html(player_stats, osrs=False):
 
     html_output = ""
     row_template = "\n\t\t<td>{}</td>" * 4
+    prefix = {"_ultimate": "UIM",
+              "_hardcore": "HCIM",
+              "_ironman":  "ironman",
+              "":          "normal"
+              }
 
     # Player stats are in the order Rank, Level, XP
 
     html_output += "<table class='hiscores'>"
-    html_output += f"\n\t<caption>My hiscores in {'OSRS' if osrs else 'RS3'}</caption>"
+    html_output += f"\n\t<!-- Using {prefix[gamemode]} ranking -->"
+    html_output += f"\n\t<caption>My hiscores in {'OSRS' if hiscores == '_oldschool' else 'RS3'}</caption>"
 
     html_output += "\n\t<tr>"
     html_output += "\n\t\t<th>Skill</th>\n\t\t<th>Level</th>\n\t\t<th>XP</th>\n\t\t<th>Rank</th>"
@@ -120,19 +147,18 @@ def format_html(player_stats, osrs=False):
 def main():
 
     args = sys.argv[1:]
-    player_name, osrs = argparse(args)
+    player_name, hiscores, gamemode = argparse(args)
 
     if player_name is None:
         player_name = input("Username: ")
 
     # Spaces aren't valid in URLs
-    if " " in player_name:
-        player_name = "_".join(player_name.split())
+    player_name = player_name.replace(" ", "_").replace("-", "_")
 
-    stats = get_stats(player_name, osrs)
-    html = format_html(stats, osrs)
+    stats = get_stats(player_name, hiscores, gamemode)
+    html = format_html(stats, hiscores, gamemode)
 
-    with open(os.path.join(os.path.dirname(__file__), "hiscores", f"{player_name}.html"), "w") as f:
+    with open(os.path.join(os.path.dirname(__file__), "hiscores", f"{player_name.lower()}.html"), "w") as f:
         f.write(html)
 
     sys.exit()
