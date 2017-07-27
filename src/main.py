@@ -131,9 +131,10 @@ def main():
 
     stats = get_stats(player_name, osrs)
     html = format_html(stats, osrs)
-    print(os.path.join(os.getcwd(), "hiscores", f"{player_name}.html"))
-    with open(os.path.join(os.getcwd(), "hiscores", f"{player_name}.html"), "w") as f:
+
+    with open(os.path.join(os.path.dirname(__file__), "hiscores", f"{player_name}.html"), "w") as f:
         f.write(html)
+
     sys.exit()
 
 if __name__ == "__main__":
