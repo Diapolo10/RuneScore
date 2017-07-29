@@ -3,6 +3,7 @@
 import sys
 import os
 import requests
+import time
 
 def print_help():
     message = """
@@ -127,6 +128,7 @@ def format_html(player_stats, hiscores="", gamemode=""):
 
     html_output += "<table class='hiscores'>"
     html_output += f"\n\t<!-- Using {prefix[gamemode]} ranking -->"
+    html_output += f"\n\t<!-- Last updated on {time.strftime('%d/%m/%Y at %H:%M')} -->"
     html_output += f"\n\t<caption>My hiscores in {'OSRS' if hiscores == '_oldschool' else 'RS3'}</caption>"
 
     html_output += "\n\t<tr>"
