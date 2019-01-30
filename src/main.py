@@ -1,8 +1,8 @@
 #!python3
 
-import sys
-import os
 import requests
+import sys
+from pathlib import Path
 
 def print_help():
     message = """
@@ -157,8 +157,12 @@ def main():
 
     stats = get_stats(player_name, hiscores, gamemode)
     html = format_html(stats, hiscores, gamemode)
+    
+    hiscores_dir = Path(__file__).parent / 'hiscores'
+    if not hiscores_dir.exists():
+        hiscores_dir.mkdir()
 
-    with open(os.path.join(os.path.dirname(__file__), "hiscores", f"{player_name.lower()}.html"), "w") as f:
+    with open(hiscores_dir / f"{player_name.lower()}.html", "w") as f:
         f.write(html)
 
     sys.exit()
